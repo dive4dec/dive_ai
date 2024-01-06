@@ -1,9 +1,10 @@
 from jupyter_ai_magics import BaseProvider, BaseEmbeddingsProvider
-from langchain.llms import FakeListLLM
-from langchain.embeddings import FakeEmbeddings
+
+from langchain.embeddings import LocalAIEmbeddings
+from langchain.chat_models import ChatOpenAI
 
 
-class LocalAIProvider(BaseProvider, FakeListLLM):
+class LocalAIProvider(BaseProvider, ChatOpenAI):
     id = "localai"
     name = "Local AI"
     model_id_key = "model"
@@ -11,6 +12,7 @@ class LocalAIProvider(BaseProvider, FakeListLLM):
         "phi-2",
         "gpt-3.5-turbo"
     ]
+
     def __init__(self, **kwargs):
         model = kwargs.get("model_id")
         kwargs["responses"] = (
@@ -20,7 +22,8 @@ class LocalAIProvider(BaseProvider, FakeListLLM):
         )
         super().__init__(**kwargs)
 
-class LocalAIEmbeddingsProvider(BaseEmbeddingsProvider, FakeEmbeddings):
+
+class LocalAIEmbeddingsProvider(BaseEmbeddingsProvider, LocalAIEmbeddings):
     id = "localai"
     name = "LocalAI Embeddings Provider"
     model_id_key = "model"
