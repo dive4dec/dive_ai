@@ -1,0 +1,113 @@
+replicaCount: 1
+
+deployment:
+  image: 
+    repository: quay.io/go-skynet/local-ai
+    tag: v2.5.1-cublas-cuda12-core
+  env:
+    threads: 1
+    context_size: 2048
+    f16: true
+    gpu_layers: 90
+    mmap: true
+    trimsuffix:
+      - "\n"
+  modelsPath: "/models"
+  download_model:
+    # To use cloud provided (eg AWS) image, provide it like: 1234356789.dkr.ecr.us-REGION-X.amazonaws.com/busybox
+    image: busybox
+  prompt_templates:
+    # To use cloud provided (eg AWS) image, provide it like: 1234356789.dkr.ecr.us-REGION-X.amazonaws.com/busybox
+    image: busybox
+  pullPolicy: IfNotPresent
+  imagePullSecrets: []
+    # - name: secret-names
+
+resources:
+  limits: 
+    nvidia.com/gpu: 4
+
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# Prompt templates to include
+# Note: the keys of this map will be the names of the prompt template files
+promptTemplates:
+  chat: &template |
+    Instruct: {{.Input}}
+    Output:
+  completion: *template
+  # ggml-gpt4all-j.tmpl: |
+  #   The prompt below is a question to answer, a task to complete, or a conversation to respond to; decide which and write an appropriate response.
+  #   ### Prompt:
+  #   {{.Input}}
+  #   ### Response:
+
+# Models to download at runtime
+models:
+  # Whether to force download models even if they already exist
+  forceDownload: false
+
+  # The list of URLs to download models from
+  # Note: the name of the file will be the name of the loaded model
+  list:
+  #   - url: "https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q8_0.gguf?download=true"
+      # basicAuth: base64EncodedCredentials
+
+# Persistent storage for models and prompt templates.
+# PVC and HostPath are mutually exclusive. If both are enabled,
+# PVC configuration takes precedence. If neither are enabled, ephemeral
+# storage is used.
+persistence:
+  models: 
+    enabled: true
+    annotations: {}
+    storageClass: local-ai-nfs-client
+    accessModes: ReadWriteMany
+    size: 80Gi
+    globalMount: /models
+  output:
+    enabled: true
+    annotations: {}
+    storageClass: local-ai-nfs-client
+    accessModes: ReadWriteMany
+    size: 20Gi
+    globalMount: /tmp/generated
+
+service:
+  type: ClusterIP
+  # If deferring to an internal only load balancer
+  # externalTrafficPolicy: Local
+  port: 80
+  annotations: {}
+  # If using an AWS load balancer, you'll need to override the default 60s load balancer idle timeout
+  # service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "1200"
+
+ingress:
+  enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 256M
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+  hosts:
+    - host: dive.cs.cityu.edu.hk
+      paths:
+        - path: /ai(/|$)(.*)
+          pathType: Prefix
+  # tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

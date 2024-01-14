@@ -1,0 +1,3 @@
+[submodule "go-skynet-helm-charts"]
+	path = go-skynet-helm-charts
+	url = https://github.com/dive4dec/go-skynet-helm-charts.git

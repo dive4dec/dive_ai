@@ -3,7 +3,4 @@ name = "dive_ai"
 version = "0.0.1"
 
 [project.entry-points."jupyter_ai.model_providers"]
-my-provider = "localai_provider:LocalAIProvider"
-
-[project.entry-points."jupyter_ai.embeddings_model_providers"]
-my-provider = "localai_provider:LocalAIEmbeddingsProvider"
+my-provider = "diveai_provider:ChatDIVEAIProvider"
