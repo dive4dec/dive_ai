@@ -6,6 +6,7 @@ dependencies:
   - pip
   - jupyterlab
   - ipywidgets
+  - build
   - pip:
     - jupyter_ai
     - openai

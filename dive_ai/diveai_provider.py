@@ -4,11 +4,11 @@ from langchain.chat_models import ChatOpenAI
 
 class ChatDIVEAI(ChatOpenAI):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs, openai_api_base="https://dive.cs.cityu.edu.hk/ai/v1/", openai_api_key="123")
+        super().__init__(**kwargs, openai_api_base="http://ai.local-ai/v1/", openai_api_key="123")
 
 class ChatDIVEAIProvider(BaseProvider, ChatDIVEAI):
     id = "diveai-chat"
-    name = "DIVE"
+    name = "AI"
     models = [
         "mistral",
     ]

@@ -106,6 +106,8 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+fullnameOverride: ai
+
 nodeSelector: {}
 
 tolerations: []

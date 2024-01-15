@@ -28,5 +28,8 @@ test:
 install:
 	cd dive_ai && pip install -e .
 
+build:
+	cd dive_ai && python -m build
+
 clean:
 	pip uninstall -y dive_ai

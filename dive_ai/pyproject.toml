@@ -1,6 +1,9 @@
 [project]
 name = "dive_ai"
 version = "0.0.1"
+dependencies = [
+    'jupyter_ai',
+]
 
 [project.entry-points."jupyter_ai.model_providers"]
 my-provider = "diveai_provider:ChatDIVEAIProvider"
