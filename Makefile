@@ -1,8 +1,9 @@
 # model = /root/llm/Mistral-7B-Instruct-v0.1
 model = /models/Mistral-7B-v0.1
+env_name ?= dive_ai
 
 env:
-	conda env create -f environment.yml
+	conda env create -n $(env_name) -f environment.yml
 
 serve:
 	screen -S dive_ai python -m vllm.entrypoints.openai.api_server \

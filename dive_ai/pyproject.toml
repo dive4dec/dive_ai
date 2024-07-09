@@ -1,12 +1,13 @@
 [project]
 name = "dive_ai"
-version = "0.0.1"
+version = "0.0.1a"
 dependencies = [
     'jupyter_ai',
 ]
 
 [project.entry-points."jupyter_ai.model_providers"]
 chat-diveai-provider = "diveai_provider:ChatDIVEAIProvider"
+chat-diveai-azure-provider = "diveai_provider:AzureChatDIVEAIProvider"
 
 [project.entry-points."jupyter_ai.embeddings_model_providers"]
 diveai-embeddings-provider = "diveai_provider:DIVEAIEmbeddingsProvider"

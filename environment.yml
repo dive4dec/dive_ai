@@ -1,12 +1,12 @@
 name: dive_ai
 channels:
+  - conda-forge
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.12
   - pip
   - jupyterlab
   - ipywidgets
   - build
   - pip:
-    - jupyter_ai
-    - openai
+    - jupyter_ai[all]
