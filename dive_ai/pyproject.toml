@@ -6,4 +6,7 @@ dependencies = [
 ]
 
 [project.entry-points."jupyter_ai.model_providers"]
-my-provider = "diveai_provider:ChatDIVEAIProvider"
+chat-diveai-provider = "diveai_provider:ChatDIVEAIProvider"
+
+[project.entry-points."jupyter_ai.embeddings_model_providers"]
+diveai-embeddings-provider = "diveai_provider:DIVEAIEmbeddingsProvider"
