@@ -9,7 +9,7 @@ from langchain_openai.embeddings import AzureOpenAIEmbeddings
 
 class DIVEChatOpenAI(ChatOpenAI):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs, openai_api_key="123")
+        super().__init__(**kwargs)
 
 class DIVEChatOpenAIProvider(BaseProvider, DIVEChatOpenAI):
     id = "dive-openai"
@@ -20,8 +20,11 @@ class DIVEChatOpenAIProvider(BaseProvider, DIVEChatOpenAI):
     pypi_package_deps = ["langchain_openai"]
     registry = True
     fields = [
-        TextField(key="openai_api_base", label="Base API URL (required)", format="text"),
+        TextField(key="base_url", label="Base URL (required)", format="text"),
     ]
+    auth_strategy = EnvAuthStrategy(
+        name="OPENAI_API_KEY", keyword_param="api_key"
+    )    
     
 class DIVEAzureChatOpenAI(AzureChatOpenAI):
     def __init__(self, **kwargs):
