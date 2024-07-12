@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  vllm:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2024-07-12T04:37:13.844600545Z"
+    description: A Helm chart for Kubernetes
+    digest: 20577dbc9181a43837a19bf6b8b08af15768424a4ab61f60b1705a589f8a00f7
+    name: vllm
+    type: application
+    urls:
+    - https://dive4dec.github.io/dive_ai/vllm-0.1.0.tgz
+    version: 0.1.0
+generated: "2024-07-12T04:37:13.84397356Z"
