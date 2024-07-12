@@ -21,6 +21,7 @@ spec:
       labels:
         {{- include "vllm.selectorLabels" . | nindent 8 }}
     spec:
+      hostIPC: true
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -34,21 +35,25 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 8000
               protocol: TCP
-          # livenessProbe:
-          #   httpGet:
-          #     path: /v1/models
-          #     port: http
-          # readinessProbe:
-          #   httpGet:
-          #     path: /v1/models
-          #     port: http
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }} 
           {{- with .Values.env }}
           env:
-            {{- include "equiz.parse" (list $ .) | indent 12 }}
+            {{- include "vllm.parse" (list $ .) | indent 12 }}
           {{- end }}
           envFrom: 
             - secretRef:

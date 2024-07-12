@@ -8,11 +8,15 @@ metadata:
   labels:
     {{- include "vllm.labels" $ | nindent 4 }}
 spec:
+  {{- if $cfg.accessMode }}
   accessModes:
     - {{ $cfg.accessMode }}
+  {{- end }}
   resources:
     requests:
       storage: {{ $cfg.size }}
+  {{- if $cfg.storageClassName }}
   storageClassName: {{ $cfg.storageClassName }}
+  {{- end }}
 {{- end }}
 {{- end }}
