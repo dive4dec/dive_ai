@@ -6,9 +6,7 @@ on:
       - main
     paths:
       - 'vllm/**'
-    # Trigger on commits with '[bump]' in the message
-    commit_message:
-      pattern: '\[bump\]'
+  workflow_dispatch:
 
 jobs:
   release-chart:
