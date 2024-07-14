@@ -5,7 +5,35 @@ from langchain_community.chat_models import ChatOllama
 
 from jupyter_ai_magics import BaseEmbeddingsProvider
 from langchain_community.embeddings import OllamaEmbeddings
-from langchain_openai.embeddings import AzureOpenAIEmbeddings
+from langchain_openai.embeddings import AzureOpenAIEmbeddings, OpenAIEmbeddings
+
+import os
+
+class DIVEChat(ChatOpenAI):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, base_url=os.environ.get("CHAT_BASE_URL") or "http://localhost:8000/v1", api_key="_")
+
+class DIVEChatProvider(BaseProvider, DIVEChat):
+    id = "dive"
+    name = " DIVE"
+    models = ['chat']
+    model_id_key = "model_name"
+    pypi_package_deps = ["langchain_openai"]
+
+class DIVEEmbeddings(OpenAIEmbeddings):
+    def __init__(self, **kwargs):
+        super().__init__(
+            **kwargs,
+            base_url=os.environ.get("EMBED_BASE_URL") or "http://localhost:8000/v1",
+            api_key="_"
+        )
+
+class DIVEEmbeddingsProvider(BaseEmbeddingsProvider, DIVEEmbeddings):
+    id = "dive"
+    name = " DIVE"
+    models = ["embed"]
+    model_id_key = "model"
+    pypi_package_deps = ["langchain_openai"]
 
 class DIVEChatOpenAI(ChatOpenAI):
     def __init__(self, **kwargs):

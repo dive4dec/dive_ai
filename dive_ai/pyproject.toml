@@ -6,10 +6,12 @@ dependencies = [
 ]
 
 [project.entry-points."jupyter_ai.model_providers"]
+dive-chat-provider = "diveai_provider:DIVEChatProvider"
 dive-chat-openai-provider = "diveai_provider:DIVEChatOpenAIProvider"
 dive-azure-chat-openai-provider = "diveai_provider:DIVEAzureChatOpenAIProvider"
 dive-ollama-chat-provider = "diveai_provider:DIVEChatOllamaProvider"
 
 [project.entry-points."jupyter_ai.embeddings_model_providers"]
+dive-embeddings-provider = "diveai_provider:DIVEEmbeddingsProvider"
 dive-azure-openai-embeddings-provider = "diveai_provider:DIVEAzureOpenAIEmbeddingsProvider"
 dive-ollama-openai-embeddings-provider = "diveai_provider:DIVEOllamaEmbeddingsProvider"
