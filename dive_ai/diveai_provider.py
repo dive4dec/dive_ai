@@ -11,7 +11,11 @@ import os
 
 class DIVEChat(ChatOpenAI):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs, base_url=os.environ.get("CHAT_BASE_URL") or "http://localhost:8000/v1", api_key="_")
+        super().__init__(
+            **kwargs, 
+            base_url=os.environ.get("CHAT_BASE_URL") or "http://localhost:8000/v1", 
+            api_key=os.environ.get("DIVE_API_KEY") or "_"
+        )
 
 class DIVEChatProvider(BaseProvider, DIVEChat):
     id = "dive"
@@ -25,7 +29,7 @@ class DIVEEmbeddings(OpenAIEmbeddings):
         super().__init__(
             **kwargs,
             base_url=os.environ.get("EMBED_BASE_URL") or "http://localhost:8000/v1",
-            api_key="_"
+            api_key=os.environ.get("DIVE_API_KEY") or "_"
         )
 
 class DIVEEmbeddingsProvider(BaseEmbeddingsProvider, DIVEEmbeddings):
