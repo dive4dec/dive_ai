@@ -1,5 +1,8 @@
-# model_folder = Meta-Llama-3-8B-Instruct
-model_folder = e5-mistral-7b-instruct
+SHELL=/bin/bash
+
+env_name = dive_ai
+model_folder = Meta-Llama-3-8B-Instruct
+# model_folder = e5-mistral-7b-instruct
 model_id = _
 ngpus = 2
 port = 8000
@@ -10,7 +13,30 @@ registry = localhost:32000
 # Docker image information
 vllm := vllm^0.1.1c
 
-# Prepare a docker image
+# --------------------------------------------------------------------------------
+# For testing the docker image
+serve: docker-run.vllm
+
+list:
+	@echo "List of models..." && \
+	curl http://localhost:$(port)/v1/models && echo
+
+chat:
+	@echo "Chat completions..." && \
+	curl http://localhost:$(port)/v1/completions \
+	-H "Content-Type: application/json" \
+	-d '{"model": "$(model_id)", "prompt": "San Francisco is a", "max_tokens": 7, "temperature": 0}' \
+	&& echo
+
+embed:
+	@echo "Embeddings..." && \
+	curl http://localhost:$(port)/v1/embeddings \
+	-H "Content-Type: application/json" \
+	-d '{"model": "$(model_id)", "input": ["I"]}' \
+	&& echo
+
+# --------------------------------------------------------------------------------
+# For preparing the docker image
 image.%:
 	@ make docker-build.$($*) && \
 	make docker-push.$($*)
@@ -108,7 +134,6 @@ define docker-run.vllm
 	--dtype float16
 endef
 
-
 # Push a docker image to a registry
 docker-push.%: parse-image-info.%; #@ $(info $(docker-push)) :
 	$(docker-push)
@@ -119,28 +144,20 @@ docker tag "$(IMAGE_NAME):$(IMAGE_TAG)" "$(registry)/$(IMAGE_NAME):$(IMAGE_TAG)"
 docker push "$(registry)/$(IMAGE_NAME):$(IMAGE_TAG)"
 endef
 
+# --------------------------------------------------------------------------------
+# Dive AI Providers
 env:
 	conda env create -n $(env_name) -f environment.yml
 
-serve: docker-run.vllm
-
-lab:
-	jupyter lab --IdentityProvider.token='' --Application.log_level=0 --allow-root
-
-list:
-	@curl http://localhost:$(port)/v1/models && echo
-
-completions:
-	@curl http://localhost:$(port)/v1/completions \
-	-H "Content-Type: application/json" \
-	-d '{"model": "$(model_id)", "prompt": "San Francisco is a", "max_tokens": 7, "temperature": 0}' \
-	&& echo
-
+activate=source /opt/conda/bin/activate $(env_name)
 install:
-	cd dive_ai && pip install -e .
+	cd dive_ai && $(activate) && pip install -e .
 
 build:
-	cd dive_ai && python -m build
+	cd dive_ai && $(activate) && python -m build
 
 uninstall:
-	pip uninstall -y dive_ai
+	$(activate) && pip uninstall -y dive_ai
+
+lab:
+	$(activate) && jupyter lab --IdentityProvider.token='' --Application.log_level=0 --allow-root
