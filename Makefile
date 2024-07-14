@@ -8,7 +8,7 @@ models = /models/hf
 registry = localhost:32000
 
 # Docker image information
-vllm := vllm^0.1.1b
+vllm := vllm^0.1.1c
 
 # Prepare a docker image
 image.%:

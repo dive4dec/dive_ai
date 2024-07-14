@@ -137,7 +137,7 @@ RUN mamba install --quiet --yes \
     COPY --from=base /opt/ /opt/
 
 # Copy local files as late as possible to avoid cache busting
-COPY start.sh docker_healthcheck.py /usr/local/bin/
+COPY start.sh /usr/local/bin/
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--", "start.sh", "python", "-m", "vllm.entrypoints.openai.api_server"]
@@ -145,8 +145,5 @@ ENTRYPOINT ["tini", "-g", "--", "start.sh", "python", "-m", "vllm.entrypoints.op
 ENV VLLM_PORT=8000 \
     API_KEY=""
 EXPOSE ${VLLM_PORT}
-
-HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
-  CMD docker_healthcheck.py --base_url=http://localhost:$VLLM_PORT/v1 --model=$MODEL --api_key=$API_KEY
 
 CMD ["--port", "${VLLM_PORT}", "--api-key", "${API_KEY}"]
