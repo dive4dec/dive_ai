@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'vllm/**'
+      - 'vllm-chart/**'
   workflow_dispatch:
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Package Helm Chart
         run: |
-          helm package vllm --destination .deploy
+          helm package vllm-chart --destination .deploy
 
       - name: Checkout gh-pages branch
         uses: actions/checkout@v3
