@@ -1,11 +1,14 @@
 channels:
   - conda-forge
+  - nvidia/label/cuda-12.1.0
   - defaults
 dependencies:
-  - python=3.12
+  - cuda
+  - python=3.11
   - pip
   - jupyterlab
   - ipywidgets
   - build
   - pip:
     - jupyter_ai[all]
+    - vllm

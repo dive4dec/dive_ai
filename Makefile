@@ -11,11 +11,24 @@ models = /models/hf
 registry = localhost:32000
 
 # Docker image information
-vllm := vllm^0.1.1c
+vllm := vllm^0.1.1d
+
+define args
+--served-model-name $(model_id) \
+--tensor-parallel-size $(ngpus) \
+--dtype float16
+endef
+
+activate=source /opt/conda/bin/activate $(env_name)
 
 # --------------------------------------------------------------------------------
-# For testing the docker image
-serve: docker-run.vllm
+# Serve locally from dive_ai environemnt
+serve:
+	$(activate) && python -m vllm.entrypoints.openai.api_server \
+	--model $(models)/$(model_folder) $(args)
+
+# Serve using docker
+serve-docker: docker-run.vllm
 
 list:
 	@echo "List of models..." && \
@@ -120,18 +133,15 @@ endef
 
 # Test run a docker image at a port
 docker-run.%: parse-image-info.%; #@ $(info $(docker-run)) :
-	$(docker-run.$*)
+	$(docker-run.$*) $(args)
 
 define docker-run.vllm
-@docker run --ipc=host --rm -it \
+docker run --ipc=host --rm -it \
 	--gpus $(ngpus) \
 	-p$(port):$(port) \
 	-v $(models):/models \
-	"$(IMAGE_NAME):$(IMAGE_TAG)" \
-	--model /models/$(model_folder) \
-	--served-model-name $(model_id) \
-	--tensor-parallel-size $(ngpus) \
-	--dtype float16
+	"$(IMAGE_NAME):$(IMAGE_TAG)"
+	--model /models/$(model_folder) 
 endef
 
 # Push a docker image to a registry
@@ -149,7 +159,6 @@ endef
 env:
 	conda env create -n $(env_name) -f environment.yml
 
-activate=source /opt/conda/bin/activate $(env_name)
 install:
 	cd dive_ai && $(activate) && pip install -e .
 

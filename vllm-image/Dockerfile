@@ -120,21 +120,27 @@ RUN set -x && \
 RUN mamba install --quiet --yes \
     'cuda' \
     && \
-    pip install --quiet --no-cache-dir \
-    'vllm==0.5.1' \
-    && \
     mamba clean --all -f -y && \
+    fix-permissions "${CONDA_DIR}"
+
+RUN \
+    pip install --quiet --no-cache-dir \
+    'vllm==0.5.2' \
+    && \
     fix-permissions "${CONDA_DIR}"
 
 # ----------------------------------------------------------
 
-    FROM foundation AS prod
+FROM foundation AS prod
 
-    COPY --from=base /etc/ /etc/
-    COPY --from=base /usr/ /usr/
-    COPY --from=base /var/ /var/
-    COPY --from=base /home/ /home/
-    COPY --from=base /opt/ /opt/
+COPY --from=base /etc/ /etc/
+COPY --from=base /usr/ /usr/
+COPY --from=base /var/ /var/
+COPY --from=base /home/ /home/
+COPY --from=base /opt/ /opt/
+
+USER ${NB_UID}
+WORKDIR ${HOME}
 
 # Copy local files as late as possible to avoid cache busting
 COPY start.sh /usr/local/bin/
