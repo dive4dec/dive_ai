@@ -1,7 +1,6 @@
 channels:
-  - conda-forge
   - nvidia/label/cuda-12.1.0
-  - defaults
+  - conda-forge
 dependencies:
   - cuda
   - python=3.11
