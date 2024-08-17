@@ -11,7 +11,7 @@ models = /models/hf
 registry = localhost:32000
 
 # Docker image information
-vllm := vllm^0.1.2
+vllm := vllm^0.1.3a
 
 define args
 --served-model-name $(model_id) \
@@ -125,7 +125,7 @@ docker-build.%: parse-image-info.%; #@ $(info $(docker-build)) :
 
 define docker-build
 @echo "Building docker image..."
-cd $(IMAGE_NAME)-image && docker build . \
+cd $(IMAGE_NAME)-image && docker buildx build . \
 -t "$(IMAGE_NAME):$(IMAGE_TAG)" \
 $(if $(DOCKERFILE_SUFFIX),-f Dockerfile.$(DOCKERFILE_SUFFIX)) \
 $(if $(BUILD_TARGET),--target $(BUILD_TARGET))

@@ -126,7 +126,7 @@ RUN mamba install --quiet --yes \
 
 RUN \
     pip install --quiet --no-cache-dir \
-    'vllm==0.5.2' \
+    'vllm==0.5.4' \
     && \
     fix-permissions "${CONDA_DIR}"
 
@@ -148,10 +148,6 @@ COPY start.sh /usr/local/bin/
 
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--", "start.sh", "python", "-m", "vllm.entrypoints.openai.api_server"]
-
-ENV VLLM_PORT=8000 \
-    API_KEY=""
-EXPOSE ${VLLM_PORT}
 
 # To avoid fatal internal server error that kills the engine
 RUN VLLM_PATH=$(pip show vllm | grep Location | cut -d' ' -f2) || { echo "vllm location not found" >&2; exit 1; } && \
