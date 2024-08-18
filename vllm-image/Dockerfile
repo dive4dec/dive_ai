@@ -149,19 +149,19 @@ COPY start.sh /usr/local/bin/
 # Configure container startup
 ENTRYPOINT ["tini", "-g", "--", "start.sh", "python", "-m", "vllm.entrypoints.openai.api_server"]
 
-# To avoid fatal internal server error that kills the engine
-RUN VLLM_PATH=$(pip show vllm | grep Location | cut -d' ' -f2) || { echo "vllm location not found" >&2; exit 1; } && \
-    API_SERVER_PATH="$VLLM_PATH/vllm/entrypoints/openai/api_server.py" && \
-    patch $API_SERVER_PATH - <<EOF
---- entrypoints/openai/api_server.py.orig	2024-07-23 02:22:08.321456687 +0800
-+++ entrypoints/openai/api_server.py	2024-07-23 02:17:28.121324937 +0800
-@@ -150,6 +150,8 @@
+# # To avoid fatal internal server error that kills the engine
+# RUN VLLM_PATH=$(pip show vllm | grep Location | cut -d' ' -f2) || { echo "vllm location not found" >&2; exit 1; } && \
+#     API_SERVER_PATH="$VLLM_PATH/vllm/entrypoints/openai/api_server.py" && \
+#     patch $API_SERVER_PATH - <<EOF
+# --- entrypoints/openai/api_server.py.orig	2024-07-23 02:22:08.321456687 +0800
+# +++ entrypoints/openai/api_server.py	2024-07-23 02:17:28.121324937 +0800
+# @@ -150,6 +150,8 @@
  
- @router.post("/v1/embeddings")
- async def create_embedding(request: EmbeddingRequest, raw_request: Request):
-+    if not engine.engine.model_config.embedding_mode:
-+        return JSONResponse(content={"detail": "This action is forbidden for the current model."}, status_code=403)
-     generator = await openai_serving_embedding.create_embedding(
-         request, raw_request)
-     if isinstance(generator, ErrorResponse):
-EOF
+#  @router.post("/v1/embeddings")
+#  async def create_embedding(request: EmbeddingRequest, raw_request: Request):
+# +    if not engine.engine.model_config.embedding_mode:
+# +        return JSONResponse(content={"detail": "This action is forbidden for the current model."}, status_code=403)
+#      generator = await openai_serving_embedding.create_embedding(
+#          request, raw_request)
+#      if isinstance(generator, ErrorResponse):
+# EOF
