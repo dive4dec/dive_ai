@@ -13,8 +13,8 @@ class DIVEChat(ChatOpenAI):
     def __init__(self, **kwargs):
         super().__init__(
             **kwargs, 
-            base_url=os.environ.get("CHAT_BASE_URL") or "http://localhost:8000/v1", 
-            api_key=os.environ.get("DIVE_API_KEY") or "_"
+            base_url=os.getenv("CHAT_BASE_URL", "http://localhost:8000/v1"),
+            api_key=os.getenv("DIVE_API_KEY", "_")
         )
 
 class DIVEChatProvider(BaseProvider, DIVEChat):
@@ -28,8 +28,8 @@ class DIVEEmbeddings(OpenAIEmbeddings):
     def __init__(self, **kwargs):
         super().__init__(
             **kwargs,
-            base_url=os.environ.get("EMBED_BASE_URL") or "http://localhost:8000/v1",
-            api_key=os.environ.get("DIVE_API_KEY") or "_"
+            base_url=os.getenv("EMBED_BASE_URL", "http://localhost:8000/v1"),
+            api_key=os.getenv("DIVE_API_KEY", "_")
         )
 
 class DIVEEmbeddingsProvider(BaseEmbeddingsProvider, DIVEEmbeddings):
@@ -83,22 +83,7 @@ class DIVEAzureChatOpenAIProvider(BaseProvider, DIVEAzureChatOpenAI):
 class DIVEChatOllamaProvider(BaseProvider, ChatOllama):
     id = "dive-ollama"
     name = " DIVE Ollama"
-    models = [
-        "dolphin-mistral",
-        "codestral",
-        "starcoder2",
-        "llava",
-        "codegemma",
-        "codeqwen",
-        "mistral",
-        "codellama",
-        "aya",
-        "deepseek-coder-v2",
-        "phi3",
-        "qwen2",
-        "llama3",
-        "gemma2",
-    ]
+    models = os.getenv('OLLAMA_MODELS_LIST', '').split(',')
     model_id_key = "model"
     pypi_package_deps = ["langchain_community"]
 
