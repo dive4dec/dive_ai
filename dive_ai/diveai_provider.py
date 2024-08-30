@@ -104,7 +104,7 @@ class DIVEAzureOpenAIEmbeddings(AzureOpenAIEmbeddings):
     def __init__(self, **kwargs):
         super().__init__(
             **kwargs,
-            azure_endpoint="https://apim-aoai-eas-dev02.azure-api.net/cs-eastus",
+            azure_endpoint="https://apim-aoai-eas-dev02.azure-api.net/cs-swedencentral",
             openai_api_version="2024-02-01"
         )
 
