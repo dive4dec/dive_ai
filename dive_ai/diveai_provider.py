@@ -114,7 +114,7 @@ class DIVEAzureOpenAIEmbeddingsProvider(BaseEmbeddingsProvider, DIVEAzureOpenAIE
     models = [
         "text-embedding-3-large"
     ]
-    model_id_key = "model"
+    model_id_key = "azure_deployment"
     pypi_package_deps = ["langchain_openai"]
     auth_strategy = EnvAuthStrategy(
         name="AZURE_OPENAI_API_KEY", keyword_param="openai_api_key"
