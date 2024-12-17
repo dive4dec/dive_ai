@@ -1,7 +1,8 @@
 SHELL=/bin/bash
 
 env_name = dive_ai
-model_folder = Meta-Llama-3-8B-Instruct
+model_folder = unsloth/Llama-3.3-70B-Instruct-bnb-4bit
+# model_folder = Meta-Llama-3-8B-Instruct
 # model_folder = e5-mistral-7b-instruct
 model_id = chat
 ngpus = 2
@@ -11,7 +12,7 @@ models = /models/hf
 registry = localhost:32000
 
 # Docker image information
-vllm := vllm^0.1.3b
+vllm := vllm^0.1.4b
 
 define args
 --served-model-name $(model_id) \

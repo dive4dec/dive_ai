@@ -60,14 +60,6 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
 COPY fix-permissions /usr/local/bin/fix-permissions
 RUN chmod a+rx /usr/local/bin/fix-permissions
 
-# Enable prompt color in the skeleton .bashrc before creating the default NB_USER
-# hadolint ignore=SC2016
-RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
-   # Add call to conda init script see https://stackoverflow.com/a/58081608/4413446
-   echo 'eval "$(conda shell.bash hook)"' >> /etc/skel/.bashrc && \
-   # fix https://github.com/jupyter/docker-stacks/issues/815
-   cat /etc/skel/.bashrc >> /etc/bash.bashrc
-
 # Create NB_USER with name jovyan user with UID=1000 and in the 'users' group
 # and make sure these dirs are writable by the `users` group.
 RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
@@ -82,8 +74,11 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
 
 USER ${NB_UID}
 
-# Pin python version here, or set it to "default"
+# Pin python version here, or leave it empty for the latest version
 ARG PYTHON_VERSION=3.11
+
+# Pin micromamba version here, or leave it empty for the latest version
+ARG MICROMAMBA_VERSION=2.0.4-0
 
 # Download and install Micromamba, and initialize Conda prefix.
 #   <https://github.com/mamba-org/mamba#micromamba>
@@ -91,42 +86,83 @@ ARG PYTHON_VERSION=3.11
 COPY --chown="${NB_UID}:${NB_GID}" initial-condarc "${CONDA_DIR}/.condarc"
 WORKDIR /tmp
 RUN set -x && \
-    arch=$(uname -m) && \
-    if [ "${arch}" = "x86_64" ]; then \
-        # Should be simpler, see <https://github.com/mamba-org/mamba/issues/1437>
-        arch="64"; \
-    fi &&  \
-    wget --progress=dot:giga -O /tmp/micromamba.tar.bz2 \
-        "https://micromamba.snakepit.net/api/micromamba/linux-${arch}/latest" && \
-    tar -xvjf /tmp/micromamba.tar.bz2 --strip-components=1 bin/micromamba && \
-    rm /tmp/micromamba.tar.bz2 && \
-    PYTHON_SPECIFIER="python=${PYTHON_VERSION}" && \
-    if [[ "${PYTHON_VERSION}" == "default" ]]; then PYTHON_SPECIFIER="python"; fi && \
-    # Install the packages
-    ./micromamba install \
-        --root-prefix="${CONDA_DIR}" \
-        --prefix="${CONDA_DIR}" \
-        --yes \
+    # Computing artifact location
+    case "$(uname)" in \
+      Linux) \
+        PLATFORM="linux" ;; \
+      Darwin) \
+        PLATFORM="osx" ;; \
+      *NT*) \
+        PLATFORM="win" ;; \
+    esac && \
+    ARCH="$(uname -m)" && \
+    case "$ARCH" in \
+      aarch64|ppc64le|arm64) \
+          ;; \
+      *) \
+        ARCH="64" ;; \
+    esac && \
+    case "$PLATFORM-$ARCH" in \
+        linux-aarch64|linux-ppc64le|linux-64|osx-arm64|osx-64|win-64) \
+            ;; \
+        *) \
+        echo "Failed to detect your OS" >&2 && \
+        exit 1 ;; \
+    esac && \
+    if [ "${MICROMAMBA_VERSION:-}" = "" ]; then \
+        RELEASE_URL="https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-${PLATFORM}-${ARCH}" ; \
+    else \
+        RELEASE_URL="https://github.com/mamba-org/micromamba-releases/releases/download/${MICROMAMBA_VERSION}/micromamba-${PLATFORM}-${ARCH}" ; \
+    fi && \
+    BIN_FOLDER="${CONDA_DIR}/bin" && \
+    mkdir -p "${BIN_FOLDER}" && \
+    curl "${RELEASE_URL}" -o "${BIN_FOLDER}/mamba" -fsSL --compressed && \
+    chmod +x "${BIN_FOLDER}/mamba"
+
+USER root
+
+# Set MAMBA_ROOT_PREFIX environment variable for the Docker build process and runtime
+ENV MAMBA_ROOT_PREFIX=${CONDA_DIR}
+
+# Enable prompt color in the skeleton .bashrc before creating the default NB_USER
+# hadolint ignore=SC2016
+RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
+    cat /etc/skel/.bashrc >> /etc/bash.bashrc
+
+# Add call to micromamba init script
+RUN cat <<'EOF' >> /etc/bash.bashrc
+eval "$(mamba shell hook --shell bash)"
+alias conda="mamba"
+EOF
+
+USER ${NB_UID}
+
+RUN if [ "${PYTHON_VERSION:-}" = "" ]; then PYTHON_SPECIFIER="python"; else PYTHON_SPECIFIER="python=${PYTHON_VERSION}"; fi && \
+        mamba install --yes \
         "${PYTHON_SPECIFIER}" \
-        'mamba' \
-        'jupyter_core' && \
-    rm micromamba && \
+        && \
     # Pin major.minor version of python
-    mamba list python | grep '^python ' | tr -s ' ' | cut -d ' ' -f 1,2 >> "${CONDA_DIR}/conda-meta/pinned" && \
-    # mamba clean --all -f -y && \
+    mamba list python | sed 's/^[[:space:]]*//' | grep '^python ' | tr -s ' ' | cut -d ' ' -f 1,2 >> "${CONDA_DIR}/conda-meta/pinned" && \
+    mamba clean --all -f -y && \
     fix-permissions "${CONDA_DIR}" && \
     fix-permissions "/home/${NB_USER}"
 
-# CUDA
+# VLLM dependencies
 RUN mamba install --quiet --yes \
-    'cuda' \
+    pytorch torchvision torchaudio pytorch-cuda=12.4 \
+    fsspec \
+    bitsandbytes=0.44.*=cuda12* \
+    -c pytorch -c nvidia \
     && \
     mamba clean --all -f -y && \
-    fix-permissions "${CONDA_DIR}"
+    fix-permissions "${CONDA_DIR}" && \
+    cd ${CONDA_DIR}/lib/python3.11/site-packages/bitsandbytes/ && \
+    ln -s libbitsandbytes_cuda120.so libbitsandbytes_cuda124.so
 
+# Install VLLM
 RUN \
     pip install --quiet --no-cache-dir \
-    'vllm==0.5.4' \
+    'vllm==0.6.4.post1' \
     && \
     fix-permissions "${CONDA_DIR}"
 
