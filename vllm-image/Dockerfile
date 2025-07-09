@@ -2,13 +2,6 @@ ARG ROOT_CONTAINER=ubuntu:24.04
 
 FROM $ROOT_CONTAINER AS foundation
 
-# Fix the UID conflict with user ubuntu when jovyan needs to be created later. 
-# See https://bugs.launchpad.net/cloud-images/+bug/2005129
-RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu
-
-# Fix: https://github.com/hadolint/hadolint/wiki/DL4006
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
 # Avoid prompt for user input for installation of dependencies
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -27,6 +20,14 @@ ENV CONDA_DIR=/opt/conda \
     TZ=Asia/Hong_Kong
 ENV PATH="${CONDA_DIR}/bin:${PATH}" \
     HOME="/home/${NB_USER}"
+
+# Fix: https://github.com/hadolint/hadolint/wiki/DL4006
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Fix the UID conflict with user ubuntu
+# See https://bugs.launchpad.net/cloud-images/+bug/2005129
+RUN touch /var/mail/ubuntu && chown ubuntu /var/mail/ubuntu && userdel -r ubuntu && \
+    useradd -l -m -s /bin/bash -N -u "${NB_UID}" "${NB_USER}"
 
 USER root
 FROM foundation AS base
@@ -60,12 +61,10 @@ RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
 COPY fix-permissions /usr/local/bin/fix-permissions
 RUN chmod a+rx /usr/local/bin/fix-permissions
 
-# Create NB_USER with name jovyan user with UID=1000 and in the 'users' group
-# and make sure these dirs are writable by the `users` group.
+# Make sure these dirs are writable by the `users` group.
 RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
     sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers && \
     sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers && \
-    useradd -l -m -s /bin/bash -N -u "${NB_UID}" "${NB_USER}" && \
     mkdir -p "${CONDA_DIR}" && \
     chown "${NB_USER}:${NB_GID}" "${CONDA_DIR}" && \
     chmod g+w /etc/passwd && \
@@ -75,10 +74,10 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
 USER ${NB_UID}
 
 # Pin python version here, or leave it empty for the latest version
-ARG PYTHON_VERSION=3.11
+ARG PYTHON_VERSION=3.12
 
 # Pin micromamba version here, or leave it empty for the latest version
-ARG MICROMAMBA_VERSION=2.0.4-0
+ARG MICROMAMBA_VERSION=2.3.0-1
 
 # Download and install Micromamba, and initialize Conda prefix.
 #   <https://github.com/mamba-org/mamba#micromamba>
@@ -148,23 +147,40 @@ RUN if [ "${PYTHON_VERSION:-}" = "" ]; then PYTHON_SPECIFIER="python"; else PYTH
     fix-permissions "/home/${NB_USER}"
 
 # VLLM dependencies
+# PyTorch
+RUN pip install --quiet --no-cache-dir \
+    'torch==2.7.*' \
+    'torchvision==0.22.*' \
+    'torchaudio==2.7.*' \
+    --index-url https://download.pytorch.org/whl/cu128 \
+    && \
+    pip install --quiet --no-cache-dir \
+    --no-build-isolation \
+    'bitsandbytes==0.46.*' \
+    && \
+    fix-permissions "${CONDA_DIR}"
+
 RUN mamba install --quiet --yes \
-    pytorch torchvision torchaudio pytorch-cuda=12.4 \
     fsspec \
-    bitsandbytes=0.44.*=cuda12* \
-    -c pytorch -c nvidia \
     && \
     mamba clean --all -f -y && \
-    fix-permissions "${CONDA_DIR}" && \
-    cd ${CONDA_DIR}/lib/python3.11/site-packages/bitsandbytes/ && \
-    ln -s libbitsandbytes_cuda120.so libbitsandbytes_cuda124.so
+    fix-permissions "${CONDA_DIR}"
 
 # Install VLLM
 RUN \
     pip install --quiet --no-cache-dir \
-    'vllm==0.6.4.post1' \
+    'vllm==0.9.2' \
     && \
     fix-permissions "${CONDA_DIR}"
+
+USER root
+
+RUN \
+    apt-get update --yes && \
+    apt-get install --yes --no-install-recommends \
+    build-essential \
+    && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ----------------------------------------------------------
 
@@ -175,6 +191,12 @@ COPY --from=base /usr/ /usr/
 COPY --from=base /var/ /var/
 COPY --from=base /home/ /home/
 COPY --from=base /opt/ /opt/
+
+# set Mamba root prefix
+ENV MAMBA_ROOT_PREFIX=${CONDA_DIR}
+
+ENV CC="/usr/bin/gcc" \
+    CXX="/usr/bin/g++"
 
 USER ${NB_UID}
 WORKDIR ${HOME}
