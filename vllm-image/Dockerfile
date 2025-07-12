@@ -170,6 +170,7 @@ RUN mamba install --quiet --yes \
 RUN \
     pip install --quiet --no-cache-dir \
     'vllm==0.9.2' \
+    'ray[default]==2.47.*' \
     && \
     fix-permissions "${CONDA_DIR}"
 
