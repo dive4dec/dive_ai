@@ -149,14 +149,14 @@ RUN if [ "${PYTHON_VERSION:-}" = "" ]; then PYTHON_SPECIFIER="python"; else PYTH
 # VLLM dependencies
 # PyTorch
 RUN pip install --quiet --no-cache-dir \
-    'torch==2.7.*' \
-    'torchvision==0.22.*' \
-    'torchaudio==2.7.*' \
+    'torch==2.8.*' \
+    'torchvision==0.23.*' \
+    'torchaudio==2.8.*' \
     --index-url https://download.pytorch.org/whl/cu128 \
     && \
     pip install --quiet --no-cache-dir \
     --no-build-isolation \
-    'bitsandbytes==0.46.*' \
+    'bitsandbytes==0.47.*' \
     && \
     fix-permissions "${CONDA_DIR}"
 
@@ -169,8 +169,8 @@ RUN mamba install --quiet --yes \
 # Install VLLM
 RUN \
     pip install --quiet --no-cache-dir \
-    'vllm==0.9.2' \
-    'ray[default]==2.47.*' \
+    'vllm==0.10.1' \
+    'ray[default]==2.48.*' \
     && \
     fix-permissions "${CONDA_DIR}"
 
