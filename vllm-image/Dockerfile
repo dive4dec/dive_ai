@@ -48,6 +48,7 @@ RUN apt-get update --yes && \
     less \
     curl \
     patch \
+    gpg \
     && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
@@ -77,7 +78,7 @@ USER ${NB_UID}
 ARG PYTHON_VERSION=3.12
 
 # Pin micromamba version here, or leave it empty for the latest version
-ARG MICROMAMBA_VERSION=2.3.0-1
+ARG MICROMAMBA_VERSION=2.3.1-0
 
 # Download and install Micromamba, and initialize Conda prefix.
 #   <https://github.com/mamba-org/mamba#micromamba>
@@ -115,24 +116,40 @@ RUN set -x && \
     fi && \
     BIN_FOLDER="${CONDA_DIR}/bin" && \
     mkdir -p "${BIN_FOLDER}" && \
-    curl "${RELEASE_URL}" -o "${BIN_FOLDER}/mamba" -fsSL --compressed && \
-    chmod +x "${BIN_FOLDER}/mamba"
-
-USER root
+    curl "${RELEASE_URL}" -o "${BIN_FOLDER}/micromamba" -fsSL --compressed && \
+    chmod +x "${BIN_FOLDER}/micromamba" && \
+    ln -s ${BIN_FOLDER}/micromamba ${BIN_FOLDER}/mamba && \
+    ln -s ${BIN_FOLDER}/micromamba ${BIN_FOLDER}/conda
 
 # Set MAMBA_ROOT_PREFIX environment variable for the Docker build process and runtime
 ENV MAMBA_ROOT_PREFIX=${CONDA_DIR}
 
-# Enable prompt color in the skeleton .bashrc before creating the default NB_USER
-# hadolint ignore=SC2016
-RUN sed -i 's/^#force_color_prompt=yes/force_color_prompt=yes/' /etc/skel/.bashrc && \
-    cat /etc/skel/.bashrc >> /etc/bash.bashrc
+USER root
 
 # Add call to micromamba init script
 RUN cat <<'EOF' >> /etc/bash.bashrc
 eval "$(mamba shell hook --shell bash)"
-alias conda="mamba"
+alias conda="micromamba"
+alias mamba="micromamba"
+mamba activate
 EOF
+
+# Install CUDA Toolkit
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-ubuntu2404.pin && \
+        mv cuda-ubuntu2404.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/3bf863cc.pub && \
+        gpg --dearmor -o /usr/share/keyrings/cuda-archive-keyring.gpg 3bf863cc.pub && \
+        echo "deb [signed-by=/usr/share/keyrings/cuda-archive-keyring.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/ /" > /etc/apt/sources.list.d/cuda.list && \
+        apt-get update && \
+        apt-get install --yes cuda-toolkit-12-8 && \
+        rm -rf /var/lib/apt/lists/* 3bf863cc.pub; \
+    else \
+        echo "Skipping CUDA installation: unsupported architecture ($ARCH)"; \
+    fi
+
+
 
 USER ${NB_UID}
 
@@ -157,6 +174,8 @@ RUN pip install --quiet --no-cache-dir \
     pip install --quiet --no-cache-dir \
     --no-build-isolation \
     'bitsandbytes==0.47.*' \
+    'transformers==4.55.*' \
+    'flashinfer-python==0.2.*' \
     && \
     fix-permissions "${CONDA_DIR}"
 
@@ -169,7 +188,7 @@ RUN mamba install --quiet --yes \
 # Install VLLM
 RUN \
     pip install --quiet --no-cache-dir \
-    'vllm==0.10.1' \
+    'vllm==0.10.1.1' \
     'ray[default]==2.48.*' \
     && \
     fix-permissions "${CONDA_DIR}"
@@ -201,6 +220,8 @@ ENV CC="/usr/bin/gcc" \
 
 USER ${NB_UID}
 WORKDIR ${HOME}
+ENV PATH="/usr/local/cuda/bin:${PATH}"
+
 
 # Copy local files as late as possible to avoid cache busting
 COPY start.sh /usr/local/bin/
