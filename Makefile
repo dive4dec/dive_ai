@@ -12,7 +12,7 @@ models = /models/hf
 registry = localhost:32000
 
 # Docker image information
-vllm := vllm^0.1.6
+vllm := vllm^0.1.7b
 
 define args
 --served-model-name $(model_id) \
