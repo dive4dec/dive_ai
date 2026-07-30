@@ -1,0 +1,11 @@
+apiVersion: v2
+name: sglang
+description: A Helm chart for SGLang serving on Kubernetes
+
+type: application
+
+# This is the chart version. Increment when the chart or templates change.
+version: 0.1.0
+
+# The version of the application being deployed.
+appVersion: "v0.5.16"

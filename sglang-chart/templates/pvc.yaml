@@ -1,0 +1,22 @@
+{{- range $pvc, $cfg := .Values.pvc }}
+{{- if not (index $.Values.global.existingPvc $pvc) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sglang.release" $ }}-{{ $pvc }}
+  labels:
+    {{- include "sglang.labels" $ | nindent 4 }}
+spec:
+  {{- if $cfg.accessMode }}
+  accessModes:
+    - {{ $cfg.accessMode }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $cfg.size }}
+  {{- if $cfg.storageClassName }}
+  storageClassName: {{ $cfg.storageClassName }}
+  {{- end }}
+{{- end }}
+{{- end }}

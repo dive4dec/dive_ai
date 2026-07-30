@@ -1,0 +1,100 @@
+# Default values for sglang.
+# This is a YAML-formatted file.
+
+replicaCount: 1
+
+image:
+  repository: lmsysorg/sglang
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: v0.5.16-cu129
+
+# Container command — SGLang Docker image defaults to /bin/bash,
+# so we must specify the serve command explicitly.
+command:
+  - python3
+  - -m
+  - sglang.launch_server
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+networkPolicy:
+  enabled: true
+  ingress: []
+
+resources: {}
+
+readinessProbe: {}
+
+livenessProbe: {}
+
+startupProbe: {}
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env: []
+
+credentials:
+  OPENAI_API_KEY: '123'
+
+volumeMounts:
+  - name: models
+    mountPath: /models
+volumes:
+  - name: models
+    +: "sglang.models"
+
+pvc:
+  models:
+    accessMode: ReadWriteOnce
+    size: 100Gi
+
+args:
+  - --model-path
+  - Qwen/Qwen3.6-27B-FP8
+  - --host
+  - 0.0.0.0
+  - --port
+  - "8000"
+
+global:
+  existingPvc:
+    models: ""
